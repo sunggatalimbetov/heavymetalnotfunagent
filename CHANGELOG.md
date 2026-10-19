@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
-- `launch_token` no longer reads arbitrary local paths. The `image` argument is the model's, so injected text could point it at `~/.heavymetal/wallet.json` and publish the private key to public IPFS as the token image. Local images are now limited to `$HEAVYMETAL_HOME/images/` (symlinks resolved, traversal refused); URLs still work.
+- `launch_token` no longer reads arbitrary local paths. The `image` argument is the model's, so injected text could point it at `~/.heavymetal/wallet.json` and publish the private key to public IPFS as the token image. Local images are now limited to `$HEAVYMETAL_HOME/images/` (symlinks resolved, traversal refused). Image URLs must resolve to a public address (no localhost, LAN or cloud-metadata hosts; every redirect hop is checked before it is requested), return an `image/*` content type and stay under 5 MB (capped while downloading).
 - `send_sol` / `send_token` are gated in code: the recipient must appear as a whole address in a user message. An address that only shows up in tool results (token descriptions, memos, web pages) is blocked as `INJECTION_BLOCK` before anything is signed. The guard proves provenance, not intent: an address the user pasted for research also counts, so a send-aware review remains a follow-up.
 
 ### Added
