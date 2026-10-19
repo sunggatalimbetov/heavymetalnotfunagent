@@ -1,3 +1,4 @@
+import pytest
 from solders.hash import Hash
 from solders.keypair import Keypair
 from solders.message import MessageV0
@@ -8,7 +9,7 @@ from solders.transaction import VersionedTransaction
 from heavymetal.agent import sanitize
 from heavymetal.providers.openai_compat import parse_json_object
 from heavymetal.solana.constants import TOKEN_PROGRAM
-from heavymetal.solana.ipfs import placeholder_png
+from heavymetal.solana.ipfs import ImageSourceError, placeholder_png, resolve_local_image
 from heavymetal.solana.tx import ata_address, build_signed, ix_transfer_sol, priority_ixs, sign_external
 from heavymetal.tools.scan import summarize_tx
 from heavymetal.tools.trade import describe_trade
@@ -107,3 +108,19 @@ def test_summarize_buy_tx():
 def test_placeholder_png():
     png = placeholder_png()
     assert png.startswith(b"\x89PNG") and len(png) > 100
+
+
+def test_launch_image_cannot_leave_images_dir(tmp_path):
+    home = tmp_path / "hm"
+    images = home / "images"
+    images.mkdir(parents=True)
+    (home / "wallet.json").write_text("[1,2,3]")
+    (images / "logo.png").write_bytes(b"png")
+    assert resolve_local_image("logo.png", images).read_bytes() == b"png"
+    for bad in ("../wallet.json", str(home / "wallet.json"), "~/.heavymetal/wallet.json", "/etc/passwd"):
+        with pytest.raises(ImageSourceError):
+            resolve_local_image(bad, images)
+    # a symlink inside the folder pointing outside is refused too
+    (images / "link.png").symlink_to(home / "wallet.json")
+    with pytest.raises(ImageSourceError):
+        resolve_local_image("link.png", images)
